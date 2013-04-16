@@ -69,6 +69,9 @@ class PostManager extends ModelPostManager
 
             $query = $repository->createQueryBuilder('p');
 
+
+
+
             $urlParameters = $blog->getPermalinkGenerator()->getParameters($permalink);
 
             $parameters = array();
@@ -103,7 +106,11 @@ class PostManager extends ModelPostManager
 
             $query->setParameters($parameters);
 
-            return $query->getQuery()->getSingleResult();
+            return $query->getQuery()
+                            ->setHint(\Doctrine\ORM\Query::HINT_CUSTOM_OUTPUT_WALKER, 'Gedmo\\Translatable\\Query\\TreeWalker\\TranslationWalker')
+                            //uncomment to find by localized slug
+//                            ->setHint(\Gedmo\Translatable\TranslatableListener::HINT_TRANSLATABLE_LOCALE, $locale)
+                            ->getSingleResult();
         } catch (NoResultException $e) {
             return null;
         }
@@ -149,8 +156,6 @@ class PostManager extends ModelPostManager
                 ->leftJoin('p.tags', 't', Expr\Join::WITH, 't.enabled = true')
                 ->leftJoin('p.author', 'a', Expr\Join::WITH, 'a.enabled = true')
                 ->orderby('p.publicationDateStart', 'DESC');
-
-        $query->getQuery()->setHint(\Doctrine\ORM\Query::HINT_CUSTOM_OUTPUT_WALKER, 'Gedmo\\Translatable\\Query\\TreeWalker\\TranslationWalker');
 
         // enabled
         $criteria['enabled'] = isset($criteria['enabled']) ? $criteria['enabled'] : true;
