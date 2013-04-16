@@ -8,20 +8,18 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
+
 namespace Sonata\NewsBundle\Entity;
 
 use Sonata\NewsBundle\Model\PostManager as ModelPostManager;
 use Sonata\NewsBundle\Model\PostInterface;
 use Sonata\NewsBundle\Model\BlogInterface;
-
 use Sonata\NewsBundle\Model\CategoryInterface;
 use Sonata\DoctrineORMAdminBundle\Datagrid\Pager;
 use Sonata\DoctrineORMAdminBundle\Datagrid\ProxyQuery;
-
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\NoResultException;
 use Doctrine\ORM\Query\Expr;
-
 use Doctrine\ORM\Query;
 
 class PostManager extends ModelPostManager
@@ -37,7 +35,7 @@ class PostManager extends ModelPostManager
      */
     public function __construct(EntityManager $em, $class)
     {
-        $this->em    = $em;
+        $this->em = $em;
         $this->class = $class;
     }
 
@@ -94,8 +92,8 @@ class PostManager extends ModelPostManager
                 $parameters = array_merge($parameters, $pcqp['params']);
 
                 $query
-                    ->leftJoin('p.category', 'c')
-                    ->andWhere($pcqp['query'])
+                        ->leftJoin('p.category', 'c')
+                        ->andWhere($pcqp['query'])
                 ;
             }
 
@@ -106,7 +104,6 @@ class PostManager extends ModelPostManager
             $query->setParameters($parameters);
 
             return $query->getQuery()->getSingleResult();
-
         } catch (NoResultException $e) {
             return null;
         }
@@ -147,11 +144,13 @@ class PostManager extends ModelPostManager
     {
         $parameters = array();
         $query = $this->em->getRepository($this->class)
-            ->createQueryBuilder('p')
-            ->select('p, t')
-            ->leftJoin('p.tags', 't', Expr\Join::WITH, 't.enabled = true')
-            ->leftJoin('p.author', 'a', Expr\Join::WITH, 'a.enabled = true')
-            ->orderby('p.publicationDateStart', 'DESC');
+                ->createQueryBuilder('p')
+                ->select('p, t')
+                ->leftJoin('p.tags', 't', Expr\Join::WITH, 't.enabled = true')
+                ->leftJoin('p.author', 'a', Expr\Join::WITH, 'a.enabled = true')
+                ->orderby('p.publicationDateStart', 'DESC');
+
+        $query->getQuery()->setHint(\Doctrine\ORM\Query::HINT_CUSTOM_OUTPUT_WALKER, 'Gedmo\\Translatable\\Query\\TreeWalker\\TranslationWalker');
 
         // enabled
         $criteria['enabled'] = isset($criteria['enabled']) ? $criteria['enabled'] : true;
@@ -170,7 +169,7 @@ class PostManager extends ModelPostManager
 
         if (isset($criteria['author'])) {
             if (!is_array($criteria['author']) && stristr($criteria['author'], 'NULL')) {
-                $query->andWhere('p.author IS '.$criteria['author']);
+                $query->andWhere('p.author IS ' . $criteria['author']);
             } else {
                 $query->andWhere(sprintf('p.author IN (%s)', implode((array) $criteria['author'], ',')));
             }
@@ -189,6 +188,9 @@ class PostManager extends ModelPostManager
         $pager->setPage($page);
         $pager->init();
 
+        //need to add getResults in controller,
+        //otherwise results will be fetched in twig template and no translations will be provided
+        $pager->getResults();
         return $pager;
     }
 
@@ -202,10 +204,10 @@ class PostManager extends ModelPostManager
     public function getPublicationDateQueryParts($date, $step, $alias = 'p')
     {
         return array(
-            'query'  => sprintf('%s.publicationDateStart >= :startDate AND %s.publicationDateStart < :endDate', $alias, $alias),
+            'query' => sprintf('%s.publicationDateStart >= :startDate AND %s.publicationDateStart < :endDate', $alias, $alias),
             'params' => array(
                 'startDate' => new \DateTime($date),
-                'endDate'   => new \DateTime($date . '+1 ' . $step)
+                'endDate' => new \DateTime($date . '+1 ' . $step)
             )
         );
     }
@@ -228,4 +230,5 @@ class PostManager extends ModelPostManager
 
         return $pcqp;
     }
+
 }
