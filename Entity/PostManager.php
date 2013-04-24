@@ -236,4 +236,11 @@ class PostManager extends ModelPostManager
         return $pcqp;
     }
 
+    public function getLatestNews($limit = 5)
+    {
+        $repository = $this->em->getRepository($this->class);
+
+        return $repository->findBy(array(), array('publicationDateStart' => 'DESC'), $limit);
+    }
+
 }
