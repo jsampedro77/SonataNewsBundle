@@ -152,7 +152,8 @@ class PostManager extends ModelPostManager
         $parameters = array();
         $query = $this->em->getRepository($this->class)
                 ->createQueryBuilder('p')
-                ->select('p, t')
+                ->select('p, t, c')
+                ->leftJoin('p.category', 'c')
                 ->leftJoin('p.tags', 't', Expr\Join::WITH, 't.enabled = true')
                 ->leftJoin('p.author', 'a', Expr\Join::WITH, 'a.enabled = true')
                 ->orderby('p.publicationDateStart', 'DESC');
