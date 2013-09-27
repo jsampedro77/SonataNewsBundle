@@ -155,7 +155,6 @@ class PostManager extends ModelPostManager
                 ->select('p, t, c')
                 ->leftJoin('p.category', 'c')
                 ->leftJoin('p.tags', 't', Expr\Join::WITH, 't.enabled = true')
-                ->leftJoin('p.author', 'a', Expr\Join::WITH, 'a.enabled = true')
                 ->orderby('p.publicationDateStart', 'DESC');
 
         // enabled
@@ -169,16 +168,8 @@ class PostManager extends ModelPostManager
         }
 
         if (isset($criteria['tag'])) {
-            $query->andWhere('t.slug LIKE :tag');
-            $parameters['tag'] = (string) $criteria['tag'];
-        }
-
-        if (isset($criteria['author'])) {
-            if (!is_array($criteria['author']) && stristr($criteria['author'], 'NULL')) {
-                $query->andWhere('p.author IS ' . $criteria['author']);
-            } else {
-                $query->andWhere(sprintf('p.author IN (%s)', implode((array) $criteria['author'], ',')));
-            }
+            $query->andWhere('t.id = :tagid');
+            $parameters['tagid'] = $criteria['tag']->getId();
         }
 
         if (isset($criteria['category']) && $criteria['category'] instanceof CategoryInterface) {
@@ -187,7 +178,6 @@ class PostManager extends ModelPostManager
         }
 
         $query->setParameters($parameters);
-
         $pager = new Pager();
         $pager->setMaxPerPage($maxPerPage);
         $pager->setQuery(new ProxyQuery($query));
